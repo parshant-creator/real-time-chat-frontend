@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket/socket";
+import { toast } from "react-hot-toast";
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -9,84 +11,127 @@ const Chat = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
+
   const [messages, setMessages] = useState([]);
+
   const [users, setUsers] = useState([]);
+
   const [selectedChat, setSelectedChat] = useState(null);
+
   const [chats, setChats] = useState([]);
 
-  // socket setup + fetch users
+  const [groupName, setGroupName] = useState("");
+
+  const [selectedUsers, setSelectedUsers] = useState([]);
+
+  const [groupIcon, setGroupIcon] = useState(null);
+
+  const [typing, setTyping] = useState(false);
+
+  const [isTyping, setIsTyping] = useState(false);
+
+  const [media, setMedia] = useState(null);
+
+  const messagesEndRef = useRef(null);
+
+  const lastTypingTimeRef = useRef(null);
+
+  // SOCKET
+
   useEffect(() => {
     socket.emit("setup", user.id || user._id);
 
     socket.on("connected", () => {
-      console.log("Socket connected");
+      console.log("Socket Connected");
     });
 
-   socket.on(
-  "message received",
-  (newMessage) => {
-    if (
-       newMessage.sender._id ===
-      (user.id ||user._id)
-    ) {
-      return;
-    }
-
-    setMessages((prev) => [
-      ...prev,
-      newMessage,
-    ]);
-
-  }
-);
-
-    const fetchUsers = async () => {
-      try {
-        const res = await API.get("/users");
-
-        setUsers(res.data);
-      } catch (error) {
-        console.log(error);
+    socket.on("message received", (newMessage) => {
+      if (newMessage.sender._id === (user.id || user._id)) {
+        return;
       }
-    };
+
+      setMessages((prev) => [...prev, newMessage]);
+    });
+
+    socket.on("typing", () => {
+      setIsTyping(true);
+    });
+
+    socket.on("stop typing", () => {
+      setIsTyping(false);
+    });
 
     fetchUsers();
+    fetchChats();
 
     return () => {
+      socket.off("connected");
       socket.off("message received");
+      socket.off("typing");
+      socket.off("stop typing");
     };
   }, []);
 
-  // logout
+  // AUTO SCROLL
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  // FETCH USERS
+
+  const fetchUsers = async () => {
+    try {
+      const res = await API.get("/users");
+
+      setUsers(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // FETCH CHATS
+
+  const fetchChats = async () => {
+    try {
+      const res = await API.get("/chat");
+
+      setChats(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // LOGOUT
+
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
 
-    alert("Logout Successful");
+    localStorage.removeItem("user");
+    socket.disconnect();
+    toast.success("Logged out successfully");
 
     navigate("/");
   };
 
-  // create chat
+  // CREATE SINGLE CHAT
+
   const createChat = async (userId) => {
     try {
-      const res = await API.post(
-        "/chat",
-        { userId },
-       
-      );
+      const res = await API.post("/chat", {
+        userId,
+      });
 
       setSelectedChat(res.data);
-      socket.emit(
-  "join chat",
-  res.data._id
-);
+
       fetchMessages(res.data._id);
 
+      socket.emit("join chat", res.data._id);
+
       setChats((prev) => {
-        const exists = prev.find(
-          (c) => c._id === res.data._id
-        );
+        const exists = prev.find((c) => c._id === res.data._id);
 
         if (exists) return prev;
 
@@ -97,129 +142,471 @@ const Chat = () => {
     }
   };
 
-  // fetch old messages
- const fetchMessages = async (chatId) => {
-  try {
+  // FETCH MESSAGES
 
-    const res = await API.get(
-      `/message/${chatId}`,
-      
-    );
-
-    console.log(res.data);
-
-    if (Array.isArray(res.data)) {
+  const fetchMessages = async (chatId) => {
+    try {
+      const res = await API.get(`/message/${chatId}`);
 
       setMessages(res.data);
 
-    } else {
+      socket.emit("join chat", chatId);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-      setMessages([]);
+  // TYPING
 
+  const typingHandler = (e) => {
+    setMessage(e.target.value);
+
+    if (!selectedChat) return;
+
+    if (!typing) {
+      setTyping(true);
+
+      socket.emit("typing", selectedChat._id);
     }
 
-    socket.emit("join chat", chatId);
+    lastTypingTimeRef.current = new Date().getTime();
 
-  } catch (error) {
+    let timerLength = 2000;
 
-    console.log(error);
+    setTimeout(() => {
+      let timeNow = new Date().getTime();
 
-    setMessages([]);
+      let timeDiff = timeNow - lastTypingTimeRef.current;
 
-  }
-};
+      if (timeDiff >= timerLength) {
+        socket.emit("stop typing", selectedChat._id);
 
-  // send message
+        setTyping(false);
+      }
+    }, timerLength);
+  };
+
+  // SEND MESSAGE
+
   const sendMessage = async () => {
-    if (!message || !selectedChat) return;
+    if ((!message && !media) || !selectedChat) return;
+
+    socket.emit("stop typing", selectedChat._id);
+
+    setTyping(false);
 
     try {
-      const res = await API.post("/message", {
-        content: message,
-        chatId: selectedChat._id,
+      const formData = new FormData();
+
+      formData.append("content", message);
+
+      formData.append("chatId", selectedChat._id);
+
+      if (media) {
+        formData.append("media", media);
+      }
+
+      const res = await API.post("/message", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      setMessages((prev) => [
-        ...prev,
-        res.data,
-      ]);
-      if (res.data.chat) {
-  socket.emit(
-    "new message",
-    res.data
-  );
-}
+      setMessages((prev) => [...prev, res.data]);
+
+      socket.emit("new message", res.data);
+
       setMessage("");
+      setMedia(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // CREATE GROUP
+
+  const createGroupChat = async () => {
+    try {
+      const formData = new FormData();
+
+      formData.append("chatName", groupName);
+
+      selectedUsers.forEach((id) => {
+        formData.append("users", id);
+      });
+
+      if (groupIcon) {
+        formData.append("groupIcon", groupIcon);
+      }
+
+      const res = await API.post("/chat/group", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setChats((prev) => [res.data, ...prev]);
+
+      setGroupName("");
+      setSelectedUsers([]);
+      setGroupIcon(null);
+
+      toast.success("Group Created");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // DELETE GROUP
+
+  const deleteGroup = async (groupId) => {
+    try {
+      const res = await API.delete(`/chat/group/${groupId}`);
+
+      toast.success(res.data.msg);
+
+      setChats((prev) => prev.filter((chat) => chat._id !== groupId));
+
+      if (selectedChat?._id === groupId) {
+        setSelectedChat(null);
+
+        setMessages([]);
+      }
     } catch (error) {
       console.log(error);
     }
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Users</h2>
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
+      {/* SIDEBAR */}
 
-      {users
-        .filter((u) => u._id !== (user.id || user._id))
-        .map((u) => (
-          <div
-            key={u._id}
-            onClick={() => createChat(u._id)}
-            style={{
-              border: "1px solid black",
-              padding: "10px",
-              margin: "5px",
-              cursor: "pointer",
-            }}
+      <div
+        className={`${
+          selectedChat ? "hidden md:flex" : "flex"
+        } w-full md:w-[32%] bg-white/80 backdrop-blur-lg border-r border-gray-200 flex-col`}
+      >
+        {/* TOP */}
+
+        <div className="sticky top-0 z-50 flex justify-between items-center p-4 border-b shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <h1 className="text-2xl font-bold">Chats</h1>
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm"
           >
-            {u.username}
+            Logout
+          </button>
+        </div>
+
+        {/* CHAT LIST */}
+
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-300 p-2">
+          <h2 className="font-bold text-gray-600 mb-2">Your Chats</h2>
+
+          {chats.map((chat) => {
+            const otherUser = chat.users.find(
+              (u) => u._id !== (user.id || user._id),
+            );
+
+            return (
+              <div
+                key={chat._id}
+                onClick={() => {
+                  setSelectedChat(chat);
+
+                  fetchMessages(chat._id);
+                }}
+                className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-2 cursor-pointer transition
+                  ${
+                    selectedChat?._id === chat._id
+                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
+                      : "hover:bg-blue-50 hover:scale-[1.01]"
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                 <div className="relative">
+  <img
+    src={
+      chat.isGroupChat
+        ? chat.groupIcon ||
+          "https://cdn-icons-png.flaticon.com/512/166/166258.png"
+        : otherUser?.profilePic ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+    }
+    alt=""
+    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+  />
+
+  {!chat.isGroupChat && (
+    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+  )}
+</div>
+
+                  <div>
+                    <p className="font-semibold text-sm md:text-base">
+                      {chat.isGroupChat ? chat.chatName : otherUser?.username}
+                    </p>
+
+                    <p className="text-xs md:text-sm text-gray-500 truncate w-36 md:w-44">
+                      {chat.latestMessage?.content || "No messages"}
+                    </p>
+                  </div>
+                </div>
+
+                {chat.isGroupChat &&
+                  chat.groupAdmin === (user.id || user._id) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        deleteGroup(chat._id);
+                      }}
+                      className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Delete
+                    </button>
+                  )}
+              </div>
+            );
+          })}
+
+          {/* USERS */}
+
+          <h2 className="font-bold text-gray-600 mt-5 mb-2">Start New Chat</h2>
+
+          {users
+            .filter((u) => u._id !== (user.id || user._id))
+            .map((u) => (
+              <div
+                key={u._id}
+                onClick={() => createChat(u._id)}
+                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-100"
+              >
+                <img
+                  src={
+                    u.profilePic ||
+                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                  }
+                  alt=""
+                  className="w-10 h-10 rounded-full"
+                />
+
+                <p className="font-medium text-sm md:text-base">{u.username}</p>
+              </div>
+            ))}
+        </div>
+
+        {/* CREATE GROUP */}
+
+        <div className="border-t p-4 bg-white/70 backdrop-blur-md">
+          <h2 className="font-bold mb-3">Create Group</h2>
+
+          <input
+            type="text"
+            placeholder="Group Name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            className="w-full border p-2 rounded-lg mb-2 text-sm"
+          />
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setGroupIcon(e.target.files[0])}
+            className="w-full border p-2 rounded-lg mb-2 text-sm"
+          />
+
+          <div className="max-h-24 overflow-y-auto border rounded-lg p-2 bg-white">
+            {users
+              .filter((u) => u._id !== (user.id || user._id))
+              .map((u) => (
+                <div key={u._id} className="flex items-center gap-2 mb-1">
+                  <input
+                    type="checkbox"
+                    value={u._id}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedUsers((prev) => [...prev, u._id]);
+                      } else {
+                        setSelectedUsers((prev) =>
+                          prev.filter((id) => id !== u._id),
+                        );
+                      }
+                    }}
+                  />
+
+                  <p className="text-sm">{u.username}</p>
+                </div>
+              ))}
           </div>
-        ))}
 
-      <hr />
-
-      <h2>Messages</h2>
-
-      <h3>Welcome {user?.username}</h3>
-
-      <button onClick={handleLogout}>
-        Logout
-      </button>
-
-      <hr />
-
-      <div>
-        {Array.isArray(messages) &&
-        messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "10px",
-            }}
+          <button
+            onClick={createGroupChat}
+            className="w-full bg-blue-500 text-white py-2 rounded-lg mt-3"
           >
-            <strong>
-              {msg.sender?.username}
-            </strong>
-             &nbsp;
-            : {msg.content}
-          </div>
-        ))}
+            Create Group
+          </button>
+        </div>
       </div>
 
-      <br />
+      {/* CHAT AREA */}
 
-      <input
-        type="text"
-        placeholder="Enter message"
-        value={message}
-        onChange={(e) =>
-          setMessage(e.target.value)
-        }
-      />
+      <div
+        className={`${
+          selectedChat ? "flex" : "hidden md:flex"
+        } flex-1 flex flex-col h-screen `}
+      >
+        {/* TOP BAR */}
 
-      <button onClick={sendMessage}>
-        Send
-      </button>
+        <div className="bg-white border-b p-4 flex items-center gap-3 shadow-sm">
+          {/* MOBILE BACK */}
+
+          <button
+            onClick={() => setSelectedChat(null)}
+            className="md:hidden bg-gray-200 px-3 py-1 rounded"
+          >
+            Back
+          </button>
+          {!selectedChat && (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="text-center">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+                  alt=""
+                  className="w-28 mx-auto opacity-70"
+                />
+
+                <h2 className="text-2xl font-bold text-gray-700 mt-4">
+                  Welcome to Chat App
+                </h2>
+
+                <p className="text-gray-500 mt-2">
+                  Select a chat to start messaging
+                </p>
+              </div>
+            </div>
+          )}
+          {selectedChat && (
+            <>
+              <div className="relative">
+  <img
+    src={
+      selectedChat.isGroupChat
+        ? selectedChat.groupIcon ||
+          "https://cdn-icons-png.flaticon.com/512/166/166258.png"
+        : selectedChat.users.find(
+            (u) => u._id !== (user.id || user._id)
+          )?.profilePic ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+    }
+    alt=""
+    className="w-12 h-12 rounded-full border-2 border-white shadow-md"
+  />
+
+  {!selectedChat.isGroupChat && (
+    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+  )}
+</div>
+              <div>
+                <h2 className="font-bold text-sm md:text-lg">
+                  {selectedChat.isGroupChat
+                    ? selectedChat.chatName
+                    : selectedChat.users.find(
+                        (u) => u._id !== (user.id || user._id),
+                      )?.username}
+                </h2>
+
+                {isTyping && (
+                  <p className="text-green-500 text-sm">typing...</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* MESSAGES */}
+
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-[#e5ddd5]">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`mb-4 flex animate-fadeIn ${
+                msg.sender?._id === (user.id || user._id)
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[85%] md:max-w-[70%] backdrop-blur-sm px-4 py-2 rounded-2xl shadow
+                  ${
+                    msg.sender?._id === (user.id || user._id)
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                      : "bg-white border border-gray-200"
+                  }`}
+              >
+                <p className="text-xs font-bold mb-1">{msg.sender?.username}</p>
+
+                <p className="text-sm md:text-base break-words">
+                  {msg.content}
+                </p>
+
+                {msg.media && msg.mediaType === "image" && (
+                  <img
+                    src={msg.media}
+                    alt=""
+                    className="mt-2 rounded-lg w-full max-w-[250px]"
+                  />
+                )}
+
+                {msg.media && msg.mediaType === "video" && (
+                  <video
+                    controls
+                    className="mt-2 rounded-lg w-full max-w-[250px]"
+                  >
+                    <source src={msg.media} />
+                  </video>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <div ref={messagesEndRef}></div>
+        </div>
+
+        {/* INPUT */}
+
+        {selectedChat && (
+          <div className="bg-white/90 backdrop-blur-lg p-2 md:p-4 border-t flex items-center gap-2 sticky bottom-0 shadow-lg">
+            <input
+              type="text"
+              placeholder="Type message..."
+              value={message}
+              onChange={typingHandler}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  sendMessage();
+                }
+              }}
+              className="flex-1 border border-gray-300 rounded-full px-4 py-3 text-sm md:text-base outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+            />
+
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={(e) => setMedia(e.target.files[0])}
+              className="max-w-[90px] text-xs"
+            />
+
+            <button
+              onClick={sendMessage}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-base md:text-lg"
+            >
+             ➤
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
