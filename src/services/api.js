@@ -1,6 +1,6 @@
 import axios from "axios";
 const API = axios.create({
-  baseURL: "https://real-time-chat-backend-yx6a.onrender.com/api",
+  baseURL: "http://localhost:4000/api",
 });
 
 API.interceptors.request.use(

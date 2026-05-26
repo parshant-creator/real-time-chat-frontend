@@ -17,7 +17,6 @@ const Chat = () => {
   const [users, setUsers] = useState([]);
 
   const [selectedChat, setSelectedChat] = useState(null);
-
   const [chats, setChats] = useState([]);
 
   const [groupName, setGroupName] = useState("");
@@ -37,6 +36,8 @@ const Chat = () => {
   const lastTypingTimeRef = useRef(null);
 
   // SOCKET
+
+  console.log(chats)
 
   useEffect(() => {
     socket.emit("setup", user.id || user._id);
@@ -225,38 +226,71 @@ const Chat = () => {
 
   // CREATE GROUP
 
+  // const createGroupChat = async () => {
+  //   try {
+  //     const formData = new FormData();
+
+  //     formData.append("chatName", groupName);
+
+  //     selectedUsers.forEach((id) => {
+  //       formData.append("users", id);
+  //     });
+
+  //     if (groupIcon) {
+  //       formData.append("groupIcon", groupIcon);
+  //     }
+
+  //     const res = await API.post("/chat/group", formData, {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+
+  //     setChats((prev) => [res.data, ...prev]);
+
+  //     setGroupName("");
+  //     setSelectedUsers([]);
+  //     setGroupIcon(null);
+
+  //     toast.success("Group Created");
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
+
+
+
   const createGroupChat = async () => {
-    try {
-      const formData = new FormData();
+  try {
+    const formData = new FormData();
 
-      formData.append("chatName", groupName);
+    formData.append("chatName", groupName);
 
-      selectedUsers.forEach((id) => {
-        formData.append("users", id);
-      });
+    // array ko string me convert karo
+    formData.append("users", JSON.stringify(selectedUsers));
 
-      if (groupIcon) {
-        formData.append("groupIcon", groupIcon);
-      }
-
-      const res = await API.post("/chat/group", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setChats((prev) => [res.data, ...prev]);
-
-      setGroupName("");
-      setSelectedUsers([]);
-      setGroupIcon(null);
-
-      toast.success("Group Created");
-    } catch (error) {
-      console.log(error);
+    if (groupIcon) {
+      formData.append("groupIcon", groupIcon);
     }
-  };
 
+    const res = await API.post("/chat/group", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    setChats((prev) => [res.data, ...prev]);
+
+    setGroupName("");
+    setSelectedUsers([]);
+    setGroupIcon(null);
+
+    toast.success("Group Created");
+  } catch (error) {
+    console.log(error);
+  }
+};
   // DELETE GROUP
 
   const deleteGroup = async (groupId) => {
@@ -278,7 +312,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[100vh] bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
       {/* SIDEBAR */}
 
       <div
