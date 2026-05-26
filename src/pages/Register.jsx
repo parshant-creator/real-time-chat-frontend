@@ -47,7 +47,7 @@ const Register = () => {
        toast.error(
   error.response?.data?.msg ||
   error.response?.data?.error ||
-  "Registration Failed"
+  error.message
 );
 
     } finally {
