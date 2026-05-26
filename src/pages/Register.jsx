@@ -44,10 +44,11 @@ const Register = () => {
 
       console.log(error.response?.data);
 
-      toast.error(
-        error.response?.data?.message ||
-        "Registration Failed"
-      );
+       toast.error(
+  error.response?.data?.msg ||
+  error.response?.data?.error ||
+  "Registration Failed"
+);
 
     } finally {
 
