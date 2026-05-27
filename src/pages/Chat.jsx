@@ -6,7 +6,9 @@ import { toast } from "react-hot-toast";
 
 const Chat = () => {
   const navigate = useNavigate();
-
+const openProfile = () => {
+  navigate("/profile");
+};
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
@@ -296,7 +298,30 @@ const Chat = () => {
           <h1 className="text-2xl font-bold">
             Chats
           </h1>
+ <div className="flex items-center gap-3">
 
+    <div
+      onClick={openProfile}
+      className="flex items-center gap-2 cursor-pointer"
+    >
+      <img
+        src={
+          user?.avtar ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+        }
+        alt=""
+        className="w-10 h-10 rounded-full object-cover border-2 border-white"
+      />
+
+      <p className="hidden md:block text-sm font-semibold"> {user?.username}</p>
+       </div>
+
+    <button
+      onClick={openProfile}
+      className="bg-white text-blue-600 px-3 py-2 rounded-lg text-sm font-semibold"
+    >
+      Profile
+    </button>
           <button
             onClick={handleLogout}
             className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm"
