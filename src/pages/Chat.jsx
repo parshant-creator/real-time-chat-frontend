@@ -329,7 +329,7 @@ const openProfile = () => {
             Logout
           </button>
         </div>
-
+</div>
         {/* CHAT LIST */}
         <div className="flex-1 overflow-y-auto p-2">
 
