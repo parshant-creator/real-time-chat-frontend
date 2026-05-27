@@ -45,7 +45,9 @@ localStorage.setItem(
   JSON.stringify(res.data.user)
 );
 
-navigate("/set-profile");
+setTimeout(() => {
+  navigate("/set-profile");
+}, 1000);
 
     } catch (error) {
 
