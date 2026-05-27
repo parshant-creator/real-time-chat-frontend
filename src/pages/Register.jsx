@@ -38,7 +38,14 @@ const Register = () => {
 
       toast.success("Registration Successful");
 
-      navigate("/");
+     localStorage.setItem("token", res.data.token);
+
+localStorage.setItem(
+  "user",
+  JSON.stringify(res.data.user)
+);
+
+navigate("/set-profile");
 
     } catch (error) {
 

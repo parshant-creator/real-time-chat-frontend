@@ -5,6 +5,7 @@ import Register from"./pages/Register";
 import Chat from"./pages/Chat"
 import ProtectedRoute from './routes/ProtectedRoute'
 import {Toaster} from 'react-hot-toast'
+import SetProfile from './pages/SetProfile';
 const App = () => {
   return (
     <>
@@ -13,6 +14,7 @@ const App = () => {
       <Route path='/' element={<Login />} />
       <Route path='/register' element={<Register />} />
       <Route path='/chat' element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+      <Route path='/set-profile' element={<ProtectedRoute><SetProfile/></ProtectedRoute>} />
     </Routes>
     </>
   

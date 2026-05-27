@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket/socket";
@@ -11,34 +10,21 @@ const Chat = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
-
   const [messages, setMessages] = useState([]);
-
   const [users, setUsers] = useState([]);
-
   const [selectedChat, setSelectedChat] = useState(null);
   const [chats, setChats] = useState([]);
-
   const [groupName, setGroupName] = useState("");
-
   const [selectedUsers, setSelectedUsers] = useState([]);
-
   const [groupIcon, setGroupIcon] = useState(null);
-
   const [typing, setTyping] = useState(false);
-
   const [isTyping, setIsTyping] = useState(false);
-
   const [media, setMedia] = useState(null);
 
   const messagesEndRef = useRef(null);
-
   const lastTypingTimeRef = useRef(null);
 
   // SOCKET
-
-  console.log(chats)
-
   useEffect(() => {
     socket.emit("setup", user.id || user._id);
 
@@ -51,7 +37,11 @@ const Chat = () => {
         return;
       }
 
-      setMessages((prev) => [...prev, newMessage]);
+      if (selectedChat && newMessage.chat._id === selectedChat._id) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
+
+      fetchChats();
     });
 
     socket.on("typing", () => {
@@ -71,10 +61,9 @@ const Chat = () => {
       socket.off("typing");
       socket.off("stop typing");
     };
-  }, []);
+  }, [selectedChat]);
 
   // AUTO SCROLL
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -82,11 +71,9 @@ const Chat = () => {
   }, [messages]);
 
   // FETCH USERS
-
   const fetchUsers = async () => {
     try {
       const res = await API.get("/users");
-
       setUsers(res.data);
     } catch (error) {
       console.log(error);
@@ -94,11 +81,9 @@ const Chat = () => {
   };
 
   // FETCH CHATS
-
   const fetchChats = async () => {
     try {
       const res = await API.get("/chat");
-
       setChats(res.data);
     } catch (error) {
       console.log(error);
@@ -106,19 +91,24 @@ const Chat = () => {
   };
 
   // LOGOUT
+  const handleLogout = async () => {
+    try {
+      await API.post("/logout");
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-    localStorage.removeItem("user");
-    socket.disconnect();
-    toast.success("Logged out successfully");
+      socket.disconnect();
 
-    navigate("/");
+      toast.success("Logged out successfully");
+
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   // CREATE SINGLE CHAT
-
   const createChat = async (userId) => {
     try {
       const res = await API.post("/chat", {
@@ -144,7 +134,6 @@ const Chat = () => {
   };
 
   // FETCH MESSAGES
-
   const fetchMessages = async (chatId) => {
     try {
       const res = await API.get(`/message/${chatId}`);
@@ -158,7 +147,6 @@ const Chat = () => {
   };
 
   // TYPING
-
   const typingHandler = (e) => {
     setMessage(e.target.value);
 
@@ -188,7 +176,6 @@ const Chat = () => {
   };
 
   // SEND MESSAGE
-
   const sendMessage = async () => {
     if ((!message && !media) || !selectedChat) return;
 
@@ -217,6 +204,8 @@ const Chat = () => {
 
       socket.emit("new message", res.data);
 
+      fetchChats();
+
       setMessage("");
       setMedia(null);
     } catch (error) {
@@ -225,85 +214,67 @@ const Chat = () => {
   };
 
   // CREATE GROUP
-
-  // const createGroupChat = async () => {
-  //   try {
-  //     const formData = new FormData();
-
-  //     formData.append("chatName", groupName);
-
-  //     selectedUsers.forEach((id) => {
-  //       formData.append("users", id);
-  //     });
-
-  //     if (groupIcon) {
-  //       formData.append("groupIcon", groupIcon);
-  //     }
-
-  //     const res = await API.post("/chat/group", formData, {
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //       },
-  //     });
-
-  //     setChats((prev) => [res.data, ...prev]);
-
-  //     setGroupName("");
-  //     setSelectedUsers([]);
-  //     setGroupIcon(null);
-
-  //     toast.success("Group Created");
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-
-
-
-
   const createGroupChat = async () => {
-  try {
-    const formData = new FormData();
+    try {
+      if (!groupName) {
+        return toast.error("Please enter group name");
+      }
 
-    formData.append("chatName", groupName);
+      if (selectedUsers.length < 2) {
+        return toast.error("Select at least 2 users");
+      }
 
-    // array ko string me convert karo
-    formData.append("users", JSON.stringify(selectedUsers));
+      const formData = new FormData();
 
-    if (groupIcon) {
-      formData.append("groupIcon", groupIcon);
+      formData.append("chatName", groupName);
+
+      formData.append(
+        "users",
+        JSON.stringify(selectedUsers)
+      );
+
+      if (groupIcon) {
+        formData.append("groupIcon", groupIcon);
+      }
+
+      const res = await API.post(
+        "/chat/group",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+      setChats((prev) => [res.data, ...prev]);
+
+      setGroupName("");
+      setSelectedUsers([]);
+      setGroupIcon(null);
+
+      toast.success("Group Created");
+    } catch (error) {
+      console.log(error);
     }
+  };
 
-    const res = await API.post("/chat/group", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    setChats((prev) => [res.data, ...prev]);
-
-    setGroupName("");
-    setSelectedUsers([]);
-    setGroupIcon(null);
-
-    toast.success("Group Created");
-  } catch (error) {
-    console.log(error);
-  }
-};
   // DELETE GROUP
-
   const deleteGroup = async (groupId) => {
     try {
-      const res = await API.delete(`/chat/group/${groupId}`);
+      const res = await API.delete(
+        `/chat/group/${groupId}`
+      );
 
       toast.success(res.data.msg);
 
-      setChats((prev) => prev.filter((chat) => chat._id !== groupId));
+      setChats((prev) =>
+        prev.filter((chat) => chat._id !== groupId)
+      );
 
       if (selectedChat?._id === groupId) {
         setSelectedChat(null);
-
         setMessages([]);
       }
     } catch (error) {
@@ -312,18 +283,19 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100vh] bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
-      {/* SIDEBAR */}
+    <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
 
+      {/* SIDEBAR */}
       <div
         className={`${
           selectedChat ? "hidden md:flex" : "flex"
         } w-full md:w-[32%] bg-white/80 backdrop-blur-lg border-r border-gray-200 flex-col`}
       >
         {/* TOP */}
-
         <div className="sticky top-0 z-50 flex justify-between items-center p-4 border-b shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <h1 className="text-2xl font-bold">Chats</h1>
+          <h1 className="text-2xl font-bold">
+            Chats
+          </h1>
 
           <button
             onClick={handleLogout}
@@ -334,13 +306,16 @@ const Chat = () => {
         </div>
 
         {/* CHAT LIST */}
+        <div className="flex-1 overflow-y-auto p-2">
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-300 p-2">
-          <h2 className="font-bold text-gray-600 mb-2">Your Chats</h2>
+          <h2 className="font-bold text-gray-600 mb-2">
+            Your Chats
+          </h2>
 
           {chats.map((chat) => {
             const otherUser = chat.users.find(
-              (u) => u._id !== (user.id || user._id),
+              (u) =>
+                u._id !== (user.id || user._id)
             );
 
             return (
@@ -348,52 +323,53 @@ const Chat = () => {
                 key={chat._id}
                 onClick={() => {
                   setSelectedChat(chat);
-
                   fetchMessages(chat._id);
                 }}
-                className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-2 cursor-pointer transition
-                  ${
-                    selectedChat?._id === chat._id
-                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
-                      : "hover:bg-blue-50 hover:scale-[1.01]"
-                  }`}
+                className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-2 cursor-pointer transition ${
+                  selectedChat?._id === chat._id
+                    ? "bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
+                    : "hover:bg-blue-50"
+                }`}
               >
                 <div className="flex items-center gap-3">
-                 <div className="relative">
-  <img
-    src={
-      chat.isGroupChat
-        ? chat.groupIcon ||
-          "https://cdn-icons-png.flaticon.com/512/166/166258.png"
-        : otherUser?.profilePic ||
-          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-    }
-    alt=""
-    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-  />
 
-  {!chat.isGroupChat && (
-    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-  )}
-</div>
+                  <div className="relative">
+                    <img
+                      src={
+                        chat.isGroupChat
+                          ? chat.groupIcon
+                          : otherUser?.avtar ||
+                            "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                      }
+                      alt=""
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                    />
+
+                    {!chat.isGroupChat && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    )}
+                  </div>
 
                   <div>
                     <p className="font-semibold text-sm md:text-base">
-                      {chat.isGroupChat ? chat.chatName : otherUser?.username}
+                      {chat.isGroupChat
+                        ? chat.chatName
+                        : otherUser?.username}
                     </p>
 
                     <p className="text-xs md:text-sm text-gray-500 truncate w-36 md:w-44">
-                      {chat.latestMessage?.content || "No messages"}
+                      {chat.latestMessage?.content ||
+                        "No messages"}
                     </p>
                   </div>
                 </div>
 
                 {chat.isGroupChat &&
-                  chat.groupAdmin === (user.id || user._id) && (
+                  chat.groupAdmin ===
+                    (user.id || user._id) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-
                         deleteGroup(chat._id);
                       }}
                       className="bg-red-500 text-white px-2 py-1 rounded text-xs"
@@ -406,11 +382,15 @@ const Chat = () => {
           })}
 
           {/* USERS */}
-
-          <h2 className="font-bold text-gray-600 mt-5 mb-2">Start New Chat</h2>
+          <h2 className="font-bold text-gray-600 mt-5 mb-2">
+            Start New Chat
+          </h2>
 
           {users
-            .filter((u) => u._id !== (user.id || user._id))
+            .filter(
+              (u) =>
+                u._id !== (user.id || user._id)
+            )
             .map((u) => (
               <div
                 key={u._id}
@@ -419,58 +399,81 @@ const Chat = () => {
               >
                 <img
                   src={
-                    u.profilePic ||
+                    u.avtar ||
                     "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                   }
                   alt=""
-                  className="w-10 h-10 rounded-full"
+                  className="w-10 h-10 rounded-full object-cover"
                 />
 
-                <p className="font-medium text-sm md:text-base">{u.username}</p>
+                <p className="font-medium text-sm md:text-base">
+                  {u.username}
+                </p>
               </div>
             ))}
         </div>
 
         {/* CREATE GROUP */}
-
         <div className="border-t p-4 bg-white/70 backdrop-blur-md">
-          <h2 className="font-bold mb-3">Create Group</h2>
+
+          <h2 className="font-bold mb-3">
+            Create Group
+          </h2>
 
           <input
             type="text"
             placeholder="Group Name"
             value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
+            onChange={(e) =>
+              setGroupName(e.target.value)
+            }
             className="w-full border p-2 rounded-lg mb-2 text-sm"
           />
 
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setGroupIcon(e.target.files[0])}
+            onChange={(e) =>
+              setGroupIcon(e.target.files[0])
+            }
             className="w-full border p-2 rounded-lg mb-2 text-sm"
           />
 
           <div className="max-h-24 overflow-y-auto border rounded-lg p-2 bg-white">
+
             {users
-              .filter((u) => u._id !== (user.id || user._id))
+              .filter(
+                (u) =>
+                  u._id !==
+                  (user.id || user._id)
+              )
               .map((u) => (
-                <div key={u._id} className="flex items-center gap-2 mb-1">
+                <div
+                  key={u._id}
+                  className="flex items-center gap-2 mb-1"
+                >
                   <input
                     type="checkbox"
                     value={u._id}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedUsers((prev) => [...prev, u._id]);
+                        setSelectedUsers((prev) => [
+                          ...prev,
+                          u._id,
+                        ]);
                       } else {
                         setSelectedUsers((prev) =>
-                          prev.filter((id) => id !== u._id),
+                          prev.filter(
+                            (id) => id !== u._id
+                          )
                         );
                       }
                     }}
                   />
 
-                  <p className="text-sm">{u.username}</p>
+                  <p className="text-sm">
+                    {u.username}
+                  </p>
                 </div>
               ))}
           </div>
@@ -485,74 +488,64 @@ const Chat = () => {
       </div>
 
       {/* CHAT AREA */}
-
       <div
         className={`${
           selectedChat ? "flex" : "hidden md:flex"
-        } flex-1 flex flex-col h-screen `}
+        } flex-1 flex-col`}
       >
-        {/* TOP BAR */}
 
+        {/* TOP BAR */}
         <div className="bg-white border-b p-4 flex items-center gap-3 shadow-sm">
-          {/* MOBILE BACK */}
 
           <button
-            onClick={() => setSelectedChat(null)}
+            onClick={() =>
+              setSelectedChat(null)
+            }
             className="md:hidden bg-gray-200 px-3 py-1 rounded"
           >
             Back
           </button>
-          {!selectedChat && (
-            <div className="flex flex-1 items-center justify-center">
-              <div className="text-center">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
-                  alt=""
-                  className="w-28 mx-auto opacity-70"
-                />
 
-                <h2 className="text-2xl font-bold text-gray-700 mt-4">
-                  Welcome to Chat App
-                </h2>
-
-                <p className="text-gray-500 mt-2">
-                  Select a chat to start messaging
-                </p>
-              </div>
-            </div>
-          )}
           {selectedChat && (
             <>
               <div className="relative">
-  <img
-    src={
-      selectedChat.isGroupChat
-        ? selectedChat.groupIcon ||
-          "https://cdn-icons-png.flaticon.com/512/166/166258.png"
-        : selectedChat.users.find(
-            (u) => u._id !== (user.id || user._id)
-          )?.profilePic ||
-          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-    }
-    alt=""
-    className="w-12 h-12 rounded-full border-2 border-white shadow-md"
-  />
+                <img
+                  src={
+                    selectedChat.isGroupChat
+                      ? selectedChat.groupIcon
+                      : selectedChat.users.find(
+                          (u) =>
+                            u._id !==
+                            (user.id ||
+                              user._id)
+                        )?.avtar ||
+                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                  }
+                  alt=""
+                  className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover"
+                />
 
-  {!selectedChat.isGroupChat && (
-    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-  )}
-</div>
+                {!selectedChat.isGroupChat && (
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                )}
+              </div>
+
               <div>
                 <h2 className="font-bold text-sm md:text-lg">
                   {selectedChat.isGroupChat
                     ? selectedChat.chatName
                     : selectedChat.users.find(
-                        (u) => u._id !== (user.id || user._id),
+                        (u) =>
+                          u._id !==
+                          (user.id ||
+                            user._id)
                       )?.username}
                 </h2>
 
                 {isTyping && (
-                  <p className="text-green-500 text-sm">typing...</p>
+                  <p className="text-green-500 text-sm">
+                    typing...
+                  </p>
                 )}
               </div>
             </>
@@ -560,47 +553,58 @@ const Chat = () => {
         </div>
 
         {/* MESSAGES */}
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-[#e5ddd5]">
 
-        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-[#e5ddd5]">
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`mb-4 flex animate-fadeIn ${
-                msg.sender?._id === (user.id || user._id)
+              className={`mb-4 flex ${
+                msg.sender?._id ===
+                (user.id || user._id)
                   ? "justify-end"
                   : "justify-start"
               }`}
             >
               <div
-                className={`max-w-[85%] md:max-w-[70%] backdrop-blur-sm px-4 py-2 rounded-2xl shadow
-                  ${
-                    msg.sender?._id === (user.id || user._id)
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                      : "bg-white border border-gray-200"
-                  }`}
+                className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl shadow ${
+                  msg.sender?._id ===
+                  (user.id || user._id)
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                    : "bg-white border border-gray-200"
+                }`}
               >
-                <p className="text-xs font-bold mb-1">{msg.sender?.username}</p>
-
-                <p className="text-sm md:text-base break-words">
-                  {msg.content}
+                <p className="text-xs font-bold mb-1">
+                  {msg.sender?.username}
                 </p>
 
-                {msg.media && msg.mediaType === "image" && (
-                  <img
-                    src={msg.media}
-                    alt=""
-                    className="mt-2 rounded-lg w-full max-w-[250px]"
-                  />
+                {msg.content && (
+                  <p className="text-sm md:text-base break-words">
+                    {msg.content}
+                  </p>
                 )}
 
-                {msg.media && msg.mediaType === "video" && (
-                  <video
-                    controls
-                    className="mt-2 rounded-lg w-full max-w-[250px]"
-                  >
-                    <source src={msg.media} />
-                  </video>
-                )}
+                {msg.media &&
+                  msg.mediaType ===
+                    "image" && (
+                    <img
+                      src={msg.media}
+                      alt=""
+                      className="mt-2 rounded-lg w-full max-w-[250px]"
+                    />
+                  )}
+
+                {msg.media &&
+                  msg.mediaType ===
+                    "video" && (
+                    <video
+                      controls
+                      className="mt-2 rounded-lg w-full max-w-[250px]"
+                    >
+                      <source
+                        src={msg.media}
+                      />
+                    </video>
+                  )}
               </div>
             </div>
           ))}
@@ -609,9 +613,9 @@ const Chat = () => {
         </div>
 
         {/* INPUT */}
-
         {selectedChat && (
-          <div className="bg-white/90 backdrop-blur-lg p-2 md:p-4 border-t flex items-center gap-2 sticky bottom-0 shadow-lg">
+          <div className="bg-white p-2 md:p-4 border-t flex items-center gap-2">
+
             <input
               type="text"
               placeholder="Type message..."
@@ -622,21 +626,23 @@ const Chat = () => {
                   sendMessage();
                 }
               }}
-              className="flex-1 border border-gray-300 rounded-full px-4 py-3 text-sm md:text-base outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              className="flex-1 border border-gray-300 rounded-full px-4 py-3 text-sm md:text-base outline-none"
             />
 
             <input
               type="file"
               accept="image/*,video/*"
-              onChange={(e) => setMedia(e.target.files[0])}
+              onChange={(e) =>
+                setMedia(e.target.files[0])
+              }
               className="max-w-[90px] text-xs"
             />
 
             <button
               onClick={sendMessage}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-base md:text-lg"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full"
             >
-             ➤
+              ➤
             </button>
           </div>
         )}
