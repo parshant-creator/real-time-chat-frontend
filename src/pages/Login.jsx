@@ -39,7 +39,9 @@ const Login = () => {
       }, 1500);
     } catch (error) {
       toast.error(error.response?.data?.msg || "Login Failed");
-    } 
+    }  finally {
+  setLoading(false);
+}
   };
 
   useEffect(() => {
