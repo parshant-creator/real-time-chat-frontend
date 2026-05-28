@@ -43,7 +43,7 @@ const SetProfile = () => {
         JSON.stringify(res.data.user)
       );
 
-      toast.success("Profile Updated");
+      toast.success("Profile Uploaded");
 
       navigate("/chat");
 
