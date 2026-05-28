@@ -17,6 +17,7 @@ const Profile = () => {
     currentUser?.avtar
   );
 
+const [password, setPassword] = useState("");
   const [image, setImage] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -49,72 +50,84 @@ const Profile = () => {
   };
 
   // UPDATE PROFILE
-  const handleUpdate = async (e) => {
+const handleUpdate = async (e) => {
 
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
+  try {
 
-      setLoading(true);
+    setLoading(true);
 
-      const data = new FormData();
+    const data = new FormData();
+
+    data.append(
+      "username",
+      formData.username
+    );
+
+    data.append(
+      "email",
+      formData.email
+    );
+
+    data.append(
+      "phone",
+      formData.phone
+    );
+
+    // PASSWORD OPTIONAL
+    if (password) {
 
       data.append(
-        "username",
-        formData.username
+        "password",
+        password
       );
-
-      data.append(
-        "email",
-        formData.email
-      );
-
-      data.append(
-        "phone",
-        formData.phone
-      );
-
-      if (image) {
-        data.append("avtar", image);
-      }
-
-      const res = await API.put(
-        `/profile/${currentUser.id}`,
-        data,
-        {
-          headers: {
-            "Content-Type":
-              "multipart/form-data",
-          },
-        }
-      );
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(res.data.user)
-      );
-
-      toast.success(
-        "Profile Updated Successfully"
-      );
-
-      navigate("/chat");
-
-    } catch (error) {
-
-      console.log(error);
-
-      toast.error(
-        error.response?.data?.msg ||
-        error.response?.data?.error ||
-        "Update failed"
-      );
-
-    } finally {
-
-      setLoading(false);
     }
-  };
+
+    // IMAGE OPTIONAL
+    if (image) {
+
+      data.append(
+        "avtar",
+        image
+      );
+    }
+
+    const res = await API.put(
+      `/auth/profile/${currentUser.id}`,
+      data,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      }
+    );
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(res.data.user)
+    );
+
+    toast.success(res.data.msg);
+
+    navigate("/chat");
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      error.response?.data?.msg ||
+      error.response?.data?.error ||
+      "Update failed"
+    );
+
+  } finally {
+
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-200 flex justify-center items-center p-4">
@@ -220,7 +233,22 @@ const Profile = () => {
                 required
               />
             </div>
+<div>
 
+  <label className="block text-gray-700 font-semibold mb-2">
+    New Password
+  </label>
+
+  <input
+    type="password"
+    value={password}
+    onChange={(e) =>
+      setPassword(e.target.value)
+    }
+    placeholder="Enter new password"
+    className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  />
+</div>
             {/* BUTTONS */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
 

@@ -3,12 +3,14 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket/socket";
 import { toast } from "react-hot-toast";
-
+import { Settings, X } from "lucide-react";
 const Chat = () => {
   const navigate = useNavigate();
+
 const openProfile = () => {
   navigate("/profile");
 };
+const [showMenu, setShowMenu] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
@@ -298,39 +300,71 @@ const openProfile = () => {
           <h1 className="text-2xl font-bold">
             Chats
           </h1>
- <div className="flex items-center gap-3">
+<div className="flex items-center gap-3 relative">
 
-    <div
-      onClick={openProfile}
-      className="flex items-center gap-2 cursor-pointer"
-    >
-      <img
-        src={
-          user?.avtar ||
-          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-        }
-        alt=""
-        className="w-10 h-10 rounded-full object-cover border-2 border-white"
-      />
+  {/* SETTINGS BUTTON */}
+  <button
+    onClick={() =>
+      setShowMenu(!showMenu)
+    }
+    className="bg-white text-blue-600 p-2 rounded-xl"
+  >
+    {
+      showMenu
+        ? <X size={20} />
+        : <Settings size={20} />
+    }
+  </button>
 
-      <p className="hidden md:block text-sm font-semibold"> {user?.username}</p>
-       </div>
+  {/* MENU */}
+  {showMenu && (
+    <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
 
-    <button
-      onClick={openProfile}
-      className="bg-white text-blue-600 px-3 py-2 rounded-lg text-sm font-semibold"
-    >
-      Profile
-    </button>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm"
-          >
-            Logout
-          </button>
-        </div>
+      {/* USER */}
+      <div className="flex flex-col items-center border-b pb-4">
+
+        <img
+          src={
+            user?.avtar ||
+            "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+          }
+          alt=""
+          className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
+        />
+
+        <h2 className="mt-3 font-bold text-gray-800 text-lg">
+          {user?.username}
+        </h2>
+
+        <p className="text-sm text-gray-500">
+          {user?.email}
+        </p>
+      </div>
+
+      {/* BUTTONS */}
+      <div className="mt-4 flex flex-col gap-3">
+
+        <button
+          onClick={openProfile}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
+        >
+          Update Profile
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  )}
+</div>
 </div>
         {/* CHAT LIST */}
+        {
+  !showMenu && (
         <div className="flex-1 overflow-y-auto p-2">
 
           <h2 className="font-bold text-gray-600 mb-2">
@@ -437,7 +471,7 @@ const openProfile = () => {
               </div>
             ))}
         </div>
-
+)}
         {/* CREATE GROUP */}
         <div className="border-t p-4 bg-white/70 backdrop-blur-md">
 
