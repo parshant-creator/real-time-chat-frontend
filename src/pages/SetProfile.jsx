@@ -28,7 +28,7 @@ const SetProfile = () => {
       formData.append("avtar", image);
 
       const res = await API.put(
-        `/profile/${user.id}`,
+        `/auth/profile/${user.id}`,
         formData,
         {
           headers: {
