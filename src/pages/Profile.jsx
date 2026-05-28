@@ -94,7 +94,7 @@ const handleUpdate = async (e) => {
     }
 
     const res = await API.put(
-      `/auth/profile/${currentUser.id}`,
+      `/profile/${currentUser.id}`,
       data,
       {
         headers: {
