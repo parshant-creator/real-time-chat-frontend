@@ -7,10 +7,10 @@ import { Settings, X } from "lucide-react";
 const Chat = () => {
   const navigate = useNavigate();
 
-const openProfile = () => {
-  navigate("/profile");
-};
-const [showMenu, setShowMenu] = useState(false);
+  const openProfile = () => {
+    navigate("/profile");
+  };
+  const [showMenu, setShowMenu] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
@@ -232,25 +232,17 @@ const [showMenu, setShowMenu] = useState(false);
 
       formData.append("chatName", groupName);
 
-      formData.append(
-        "users",
-        JSON.stringify(selectedUsers)
-      );
+      formData.append("users", JSON.stringify(selectedUsers));
 
       if (groupIcon) {
         formData.append("groupIcon", groupIcon);
       }
 
-      const res = await API.post(
-        "/chat/group",
-        formData,
-        {
-          headers: {
-            "Content-Type":
-              "multipart/form-data",
-          },
-        }
-      );
+      const res = await API.post("/chat/group", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       setChats((prev) => [res.data, ...prev]);
 
@@ -267,15 +259,11 @@ const [showMenu, setShowMenu] = useState(false);
   // DELETE GROUP
   const deleteGroup = async (groupId) => {
     try {
-      const res = await API.delete(
-        `/chat/group/${groupId}`
-      );
+      const res = await API.delete(`/chat/group/${groupId}`);
 
       toast.success(res.data.msg);
 
-      setChats((prev) =>
-        prev.filter((chat) => chat._id !== groupId)
-      );
+      setChats((prev) => prev.filter((chat) => chat._id !== groupId));
 
       if (selectedChat?._id === groupId) {
         setSelectedChat(null);
@@ -288,251 +276,206 @@ const [showMenu, setShowMenu] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
-
       {/* SIDEBAR */}
       <div
-        className={`${
-          selectedChat ? "hidden md:flex" : "flex"
-        } w-full md:w-[32%] bg-white/80 backdrop-blur-lg border-r border-gray-200 flex-col`}
+        className={`${selectedChat ? "hidden md:flex" : "flex"}  w-full 
+  md:w-[32%] 
+  h-full
+  bg-white/80 
+  backdrop-blur-lg 
+  border-r 
+  border-gray-200 
+  flex-col`}
       >
         {/* TOP */}
         <div className="sticky top-0 z-50 flex justify-between items-center p-4 border-b shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <h1 className="text-2xl font-bold">
-            Chats
-          </h1>
-<div className="flex items-center gap-3 relative">
+          <h1 className="text-2xl font-bold">Chats</h1>
+          <div className="flex items-center gap-3 relative">
+            {/* SETTINGS BUTTON */}
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="bg-white text-blue-600 p-2 rounded-xl"
+            >
+              {showMenu ? <X size={20} /> : <Settings size={20} />}
+            </button>
 
-  {/* SETTINGS BUTTON */}
-  <button
-    onClick={() =>
-      setShowMenu(!showMenu)
-    }
-    className="bg-white text-blue-600 p-2 rounded-xl"
-  >
-    {
-      showMenu
-        ? <X size={20} />
-        : <Settings size={20} />
-    }
-  </button>
+            {/* MENU */}
+            {showMenu && (
+              <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
+                {/* USER */}
+                <div className="flex flex-col items-center border-b pb-4">
+                  <img
+                    src={
+                      user?.avtar ||
+                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    }
+                    alt=""
+                    className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
+                  />
 
-  {/* MENU */}
-  {showMenu && (
-    <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
+                  <h2 className="mt-3 font-bold text-gray-800 text-lg">
+                    {user?.username}
+                  </h2>
 
-      {/* USER */}
-      <div className="flex flex-col items-center border-b pb-4">
-
-        <img
-          src={
-            user?.avtar ||
-            "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-          }
-          alt=""
-          className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
-        />
-
-        <h2 className="mt-3 font-bold text-gray-800 text-lg">
-          {user?.username}
-        </h2>
-
-        <p className="text-sm text-gray-500">
-          {user?.email}
-        </p>
-      </div>
-
-      {/* BUTTONS */}
-      <div className="mt-4 flex flex-col gap-3">
-
-        <button
-          onClick={openProfile}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
-        >
-          Update Profile
-        </button>
-
-        <button
-          onClick={handleLogout}
-          className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-  )}
-</div>
-</div>
-        {/* CHAT LIST */}
-        {
-  !showMenu && (
-        <div className="flex-1 overflow-y-auto p-2">
-
-          <h2 className="font-bold text-gray-600 mb-2">
-            Your Chats
-          </h2>
-
-          {chats.map((chat) => {
-            const otherUser = chat.users.find(
-              (u) =>
-                u._id !== (user.id || user._id)
-            );
-
-            return (
-              <div
-                key={chat._id}
-                onClick={() => {
-                  setSelectedChat(chat);
-                  fetchMessages(chat._id);
-                }}
-                className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-2 cursor-pointer transition ${
-                  selectedChat?._id === chat._id
-                    ? "bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
-                    : "hover:bg-blue-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-
-                  <div className="relative">
-                    <img
-                      src={
-                        chat.isGroupChat
-                          ? chat.groupIcon
-                          : otherUser?.avtar ||
-                            "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                      }
-                      alt=""
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-                    />
-
-                    {!chat.isGroupChat && (
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="font-semibold text-sm md:text-base">
-                      {chat.isGroupChat
-                        ? chat.chatName
-                        : otherUser?.username}
-                    </p>
-
-                    <p className="text-xs md:text-sm text-gray-500 truncate w-36 md:w-44">
-                      {chat.latestMessage?.content ||
-                        "No messages"}
-                    </p>
-                  </div>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
                 </div>
 
-                {chat.isGroupChat &&
-                  chat.groupAdmin ===
-                    (user.id || user._id) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteGroup(chat._id);
-                      }}
-                      className="bg-red-500 text-white px-2 py-1 rounded text-xs"
-                    >
-                      Delete
-                    </button>
-                  )}
+                {/* BUTTONS */}
+                <div className="mt-4 flex flex-col gap-3">
+                  <button
+                    onClick={openProfile}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
+                  >
+                    Update Profile
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
-            );
-          })}
-
-          {/* USERS */}
-          <h2 className="font-bold text-gray-600 mt-5 mb-2">
-            Start New Chat
-          </h2>
-
-          {users
-            .filter(
-              (u) =>
-                u._id !== (user.id || user._id)
-            )
-            .map((u) => (
-              <div
-                key={u._id}
-                onClick={() => createChat(u._id)}
-                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-100"
-              >
-                <img
-                  src={
-                    u.avtar ||
-                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                  }
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-
-                <p className="font-medium text-sm md:text-base">
-                  {u.username}
-                </p>
-              </div>
-            ))}
+            )}
+          </div>
         </div>
-)}
-        {/* CREATE GROUP */}
-        <div className="border-t p-4 bg-white/70 backdrop-blur-md">
+        {/* CHAT LIST */}
+        {!showMenu && (
+          <div className="flex-1 overflow-y-auto p-2 min-h-0">
+            <h2 className="font-bold text-gray-600 mb-2">Your Chats</h2>
 
-          <h2 className="font-bold mb-3">
-            Create Group
-          </h2>
+            {chats.map((chat) => {
+              const otherUser = chat.users.find(
+                (u) => u._id !== (user.id || user._id),
+              );
+
+              return (
+                <div
+                  key={chat._id}
+                  onClick={() => {
+                    setSelectedChat(chat);
+                    fetchMessages(chat._id);
+                  }}
+                  className={`flex items-center justify-between gap-2 p-3 rounded-xl mb-2 cursor-pointer transition ${
+                    selectedChat?._id === chat._id
+                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
+                      : "hover:bg-blue-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img
+                        src={
+                          chat.isGroupChat
+                            ? chat.groupIcon
+                            : otherUser?.avtar ||
+                              "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                        }
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                      />
+
+                      {!chat.isGroupChat && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-sm md:text-base">
+                        {chat.isGroupChat ? chat.chatName : otherUser?.username}
+                      </p>
+
+                      <p className="text-xs md:text-sm text-gray-500 truncate w-36 md:w-44">
+                        {chat.latestMessage?.content || "No messages"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {chat.isGroupChat &&
+                    chat.groupAdmin === (user.id || user._id) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteGroup(chat._id);
+                        }}
+                        className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                      >
+                        Delete
+                      </button>
+                    )}
+                </div>
+              );
+            })}
+
+            {/* USERS */}
+            <h2 className="font-bold text-gray-600 mt-5 mb-2">
+              Start New Chat
+            </h2>
+
+            {users
+              .filter((u) => u._id !== (user.id || user._id))
+              .map((u) => (
+                <div
+                  key={u._id}
+                  onClick={() => createChat(u._id)}
+                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-100"
+                >
+                  <img
+                    src={
+                      u.avtar ||
+                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    }
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+
+                  <p className="font-medium text-sm md:text-base">
+                    {u.username}
+                  </p>
+                </div>
+              ))}
+          </div>
+        )}
+        {/* CREATE GROUP */}
+        <div className="border-t p-4 bg-white/70 backdrop-blur-md shrink-0">
+          <h2 className="font-bold mb-3">Create Group</h2>
 
           <input
             type="text"
             placeholder="Group Name"
             value={groupName}
-            onChange={(e) =>
-              setGroupName(e.target.value)
-            }
+            onChange={(e) => setGroupName(e.target.value)}
             className="w-full border p-2 rounded-lg mb-2 text-sm"
           />
 
           <input
             type="file"
             accept="image/*"
-            onChange={(e) =>
-              setGroupIcon(e.target.files[0])
-            }
+            onChange={(e) => setGroupIcon(e.target.files[0])}
             className="w-full border p-2 rounded-lg mb-2 text-sm"
           />
 
-          <div className="max-h-24 overflow-y-auto border rounded-lg p-2 bg-white">
-
-            {users
-              .filter(
-                (u) =>
-                  u._id !==
-                  (user.id || user._id)
-              )
+<div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white">
+              {users
+              .filter((u) => u._id !== (user.id || user._id))
               .map((u) => (
-                <div
-                  key={u._id}
-                  className="flex items-center gap-2 mb-1"
-                >
+                <div key={u._id} className="flex items-center gap-2 mb-1">
                   <input
                     type="checkbox"
                     value={u._id}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedUsers((prev) => [
-                          ...prev,
-                          u._id,
-                        ]);
+                        setSelectedUsers((prev) => [...prev, u._id]);
                       } else {
                         setSelectedUsers((prev) =>
-                          prev.filter(
-                            (id) => id !== u._id
-                          )
+                          prev.filter((id) => id !== u._id),
                         );
                       }
                     }}
                   />
 
-                  <p className="text-sm">
-                    {u.username}
-                  </p>
+                  <p className="text-sm">{u.username}</p>
                 </div>
               ))}
           </div>
@@ -550,16 +493,12 @@ const [showMenu, setShowMenu] = useState(false);
       <div
         className={`${
           selectedChat ? "flex" : "hidden md:flex"
-        } flex-1 flex-col`}
+        } flex-1 flex-col h-full`}
       >
-
         {/* TOP BAR */}
         <div className="bg-white border-b p-4 flex items-center gap-3 shadow-sm">
-
           <button
-            onClick={() =>
-              setSelectedChat(null)
-            }
+            onClick={() => setSelectedChat(null)}
             className="md:hidden bg-gray-200 px-3 py-1 rounded"
           >
             Back
@@ -573,10 +512,7 @@ const [showMenu, setShowMenu] = useState(false);
                     selectedChat.isGroupChat
                       ? selectedChat.groupIcon
                       : selectedChat.users.find(
-                          (u) =>
-                            u._id !==
-                            (user.id ||
-                              user._id)
+                          (u) => u._id !== (user.id || user._id),
                         )?.avtar ||
                         "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                   }
@@ -594,47 +530,59 @@ const [showMenu, setShowMenu] = useState(false);
                   {selectedChat.isGroupChat
                     ? selectedChat.chatName
                     : selectedChat.users.find(
-                        (u) =>
-                          u._id !==
-                          (user.id ||
-                            user._id)
+                        (u) => u._id !== (user.id || user._id),
                       )?.username}
                 </h2>
 
                 {isTyping && (
-                  <p className="text-green-500 text-sm">
-                    typing...
-                  </p>
+                  <p className="text-green-500 text-sm">typing...</p>
                 )}
               </div>
             </>
           )}
         </div>
+{!selectedChat && (
+  <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-100 to-blue-100">
 
+    <div className="text-center px-6">
+
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+        alt=""
+        className="w-28 md:w-36 mx-auto opacity-80"
+      />
+
+      <h2 className="text-2xl md:text-4xl font-bold text-gray-700 mt-6">
+        Welcome to Real Time Chat
+      </h2>
+
+      <p className="text-gray-500 mt-3 text-sm md:text-base">
+        Select a chat to start messaging
+      </p>
+
+    </div>
+  </div>
+)}
         {/* MESSAGES */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-[#e5ddd5]">
-
+        {selectedChat && (
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-[#e5ddd5] min-h-0">
           {messages.map((msg, index) => (
             <div
               key={index}
               className={`mb-4 flex ${
-                msg.sender?._id ===
-                (user.id || user._id)
+                msg.sender?._id === (user.id || user._id)
                   ? "justify-end"
                   : "justify-start"
               }`}
             >
               <div
                 className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl shadow ${
-                  msg.sender?._id ===
-                  (user.id || user._id)
+                  msg.sender?._id === (user.id || user._id)
                     ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                     : "bg-white border border-gray-200"
                 }`}
               >
-                <p className="text-xs font-bold mb-1">
-                  {msg.sender?.username}
-                </p>
+                <p className="text-xs font-bold mb-1">{msg.sender?.username}</p>
 
                 {msg.content && (
                   <p className="text-sm md:text-base break-words">
@@ -642,39 +590,32 @@ const [showMenu, setShowMenu] = useState(false);
                   </p>
                 )}
 
-                {msg.media &&
-                  msg.mediaType ===
-                    "image" && (
-                    <img
-                      src={msg.media}
-                      alt=""
-                      className="mt-2 rounded-lg w-full max-w-[250px]"
-                    />
-                  )}
+                {msg.media && msg.mediaType === "image" && (
+                  <img
+                    src={msg.media}
+                    alt=""
+                    className="mt-2 rounded-lg w-full max-w-[250px]"
+                  />
+                )}
 
-                {msg.media &&
-                  msg.mediaType ===
-                    "video" && (
-                    <video
-                      controls
-                      className="mt-2 rounded-lg w-full max-w-[250px]"
-                    >
-                      <source
-                        src={msg.media}
-                      />
-                    </video>
-                  )}
+                {msg.media && msg.mediaType === "video" && (
+                  <video
+                    controls
+                    className="mt-2 rounded-lg w-full max-w-[250px]"
+                  >
+                    <source src={msg.media} />
+                  </video>
+                )}
               </div>
             </div>
           ))}
 
           <div ref={messagesEndRef}></div>
         </div>
-
+)}
         {/* INPUT */}
         {selectedChat && (
-          <div className="bg-white p-2 md:p-4 border-t flex items-center gap-2">
-
+          <div className="bg-white p-2 md:p-4 border-t flex items-center gap-2 shrink-0">
             <input
               type="text"
               placeholder="Type message..."
@@ -691,9 +632,7 @@ const [showMenu, setShowMenu] = useState(false);
             <input
               type="file"
               accept="image/*,video/*"
-              onChange={(e) =>
-                setMedia(e.target.files[0])
-              }
+              onChange={(e) => setMedia(e.target.files[0])}
               className="max-w-[90px] text-xs"
             />
 
