@@ -335,46 +335,7 @@ const groupModal = (
           <button onClick={() => setShowGroup(false)}>
             <X />
           </button>
-{showMenu && (
-  <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
 
-    <div className="flex flex-col items-center border-b pb-4">
-      <img
-        src={
-          user?.avtar ||
-          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-        }
-        alt=""
-        className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
-      />
-
-      <h2 className="mt-3 font-bold text-gray-800 text-lg">
-        {user?.username}
-      </h2>
-
-      <p className="text-sm text-gray-500">
-        {user?.email}
-      </p>
-    </div>
-
-    <div className="mt-4 flex flex-col gap-3">
-      <button
-        onClick={openProfile}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl"
-      >
-        Update Profile
-      </button>
-
-      <button
-        onClick={handleLogout}
-        className="w-full bg-red-500 text-white py-3 rounded-xl"
-      >
-        Logout
-      </button>
-    </div>
-
-  </div>
-)}
         </div>
 
         <input
@@ -473,7 +434,48 @@ shrink-0
   >
     {showMenu ? <X size={20} /> : <Settings size={20} />}
   </button>
+  {showMenu && (
+    <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
 
+      <div className="flex flex-col items-center border-b pb-4">
+        <img
+          src={
+            user?.avtar ||
+            "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+          }
+          alt=""
+          className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
+        />
+
+        <h2 className="mt-3 font-bold text-gray-800 text-lg">
+          {user?.username}
+        </h2>
+
+        <p className="text-sm text-gray-500">
+          {user?.email}
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3">
+        <button
+          onClick={openProfile}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl"
+        >
+          Update Profile
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500 text-white py-3 rounded-xl"
+        >
+          Logout
+        </button>
+      </div>
+
+    </div>
+  )}
+
+</div>
 </div>
         </div>
         {/* CHAT LIST */}
