@@ -2,15 +2,16 @@ import API from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+
 const Login = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false)
+
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
 
   const handleChange = (e) => {
     setFormData({
@@ -21,27 +22,25 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      setLoading(true)
-      await new Promise((resolve)=>
-        setTimeout(resolve, 1500)
-      )
+      setLoading(true);
+
       const res = await API.post("/login", formData);
 
       localStorage.setItem("token", res.data.token);
-
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       toast.success(res.data.msg);
 
       setTimeout(() => {
         navigate("/chat");
-      }, 1500);
+      }, 1000);
     } catch (error) {
       toast.error(error.response?.data?.msg || "Login Failed");
-    }  finally {
-  setLoading(false);
-}
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -53,73 +52,77 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-200 px-4 py-6 sm:px-6 lg:px-8">
-      {/* MAIN CARD */}
-      <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10">
-        {/* TOP */}
-        <div className="flex flex-col items-center mb-8">
-          {/* LOGO */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
-            <span className="text-white text-3xl sm:text-4xl font-bold">
-              💬
-            </span>
+    <div className="h-screen flex items-center justify-center px-4 bg-slate-50 overflow-hidden">
+      <div className="w-full max-w-xs bg-white rounded-2xl shadow-lg p-4">
+        
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center">
+            <span className="text-white text-xl">💬</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold mt-5 text-gray-800 text-center">
+          <h2 className="text-2xl font-bold mt-2 text-gray-800">
             Welcome Back
           </h2>
 
-          <p className="text-gray-500 text-sm sm:text-base mt-2 text-center">
-            Login to continue chatting with friends
+          <p className="text-sm text-gray-500 mt-1">
+            Login to continue
           </p>
         </div>
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* EMAIL */}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          
           <div>
-            <label className="text-sm font-semibold text-gray-700">Email</label>
+            <label className="text-sm font-medium text-gray-700">
+              Email
+            </label>
 
             <input
               type="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder="Enter email"
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full mt-2 px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm sm:text-base"
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* PASSWORD */}
           <div>
-            <label className="text-sm font-semibold text-gray-700">
+            <label className="text-sm font-medium text-gray-700">
               Password
             </label>
 
             <input
               type="password"
               name="password"
-              placeholder="Enter your password"
+              placeholder="Enter password"
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full mt-2 px-4 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm sm:text-base"
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* BUTTON */}
           <button
             type="submit"
-            className="w-full py-3 sm:py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold transition duration-300 shadow-lg text-sm sm:text-base"
+            disabled={loading}
+            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium transition"
           >
-          {loading ? "Loading...":"Log In"}
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Loading...
+              </div>
+            ) : (
+              "Log In"
+            )}
           </button>
         </form>
 
-        {/* FOOTER */}
-        <p className="text-center text-sm sm:text-base text-gray-600 mt-7">
-          Don’t have an account?{" "}
+        <p className="text-center text-sm text-gray-600 mt-4">
+          Don't have an account?{" "}
           <Link
             to="/register"
             className="text-blue-600 font-semibold hover:underline"
