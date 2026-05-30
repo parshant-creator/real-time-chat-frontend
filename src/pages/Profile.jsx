@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { ArrowLeft } from "lucide-react";
 
 const Profile = () => {
 
@@ -136,15 +137,14 @@ const handleUpdate = async (e) => {
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
 
         {/* TOP */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white text-center">
+        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white text-center">
 <button
-                type="button"
-                onClick={() =>
-                  navigate("/chat")
-                }
-className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full text-sm transition"              >
-                Back To Chat
-              </button>
+  type="button"
+  onClick={() => navigate("/chat")}
+  className="absolute top-5 left-5 bg-white/20 hover:bg-white/30 p-2 rounded-full transition"
+>
+  <ArrowLeft size={22} />
+</button>
           <h1 className="text-3xl md:text-4xl font-bold">
             My Profile
           </h1>
@@ -201,7 +201,7 @@ className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Enter username"
-                className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -219,7 +219,7 @@ className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter email"
-                className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -237,7 +237,7 @@ className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="Enter phone number"
-                className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -254,7 +254,7 @@ className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded
       setPassword(e.target.value)
     }
     placeholder="Enter new password"
-    className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
   />
 </div>
 <div>
@@ -268,7 +268,7 @@ className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded
       value={password}
       onChange={(e) => setPassword(e.target.value)}
       placeholder="Enter new password"
-      className="w-full border border-gray-300 rounded-2xl px-4 py-4 pr-12"
+      className="w-full border border-gray-300 rounded-2xl px-4 py-3 pr-12"
     />
 
     <button
