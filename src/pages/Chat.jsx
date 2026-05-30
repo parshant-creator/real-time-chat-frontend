@@ -12,7 +12,7 @@ const Chat = () => {
   };
   const [showUsers, setShowUsers] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user"))|| {};
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -28,6 +28,7 @@ const Chat = () => {
   const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const lastTypingTimeRef = useRef(null);
+  const menuRef = useRef(null);
   // SOCKET
   useEffect(() => {
     socket.emit("setup", user.id || user._id);
@@ -309,6 +310,19 @@ const Chat = () => {
       </div>
     </div>
   );
+  useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (menuRef.current && !menuRef.current.contains(e.target)) {
+      setShowMenu(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
   const groupModal = showGroup && (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center">
       <div className="bg-white rounded-2xl p-5 w-full max-w-md">
@@ -370,6 +384,7 @@ const Chat = () => {
         </button>
       </div>
     </div>
+    
   );
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
@@ -388,7 +403,9 @@ shrink-0
         {/* TOP */}
         <div className="sticky top-0 z-50 flex justify-between items-center p-4 border-b shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <h1 className="text-2xl font-bold">Chats</h1>
-          <div className="flex items-center gap-2 relative">
+          <div 
+           ref={menuRef}
+          className="flex items-center gap-2 relative">
             <button
               onClick={() => setShowUsers(true)}
               className="bg-white text-blue-600 p-2 rounded-xl"
@@ -591,7 +608,7 @@ shrink-0
           <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-4 bg-[#e5ddd5] pb-24">
             {messages.map((msg, index) => (
               <div
-                key={index}
+                key={msg._id}
                 className={`mb-4 flex ${
                   msg.sender?._id === (user.id || user._id)
                     ? "justify-end"
@@ -599,7 +616,7 @@ shrink-0
                 }`}
               >
                 <div
-                  className={`max-w-[85%] md:max-w-[70%] px-4 py-2 rounded-2xl shadow ${
+                  className={`max-w-[75%] md:max-w-[65%] px-4 py-2 rounded-2xl shadow ${
                     msg.sender?._id === (user.id || user._id)
                       ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                       : "bg-white border border-gray-200"

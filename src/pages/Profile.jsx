@@ -133,17 +133,16 @@ const handleUpdate = async (e) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-200 flex justify-center items-center p-4">
 
-      <div className="w-full max-w-xl bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
 
         {/* TOP */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white text-center">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white text-center">
 <button
                 type="button"
                 onClick={() =>
                   navigate("/chat")
                 }
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-4 rounded-2xl font-semibold transition"
-              >
+className="absolute left-4 top-4 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full text-sm transition"              >
                 Back To Chat
               </button>
           <h1 className="text-3xl md:text-4xl font-bold">
@@ -156,7 +155,7 @@ const handleUpdate = async (e) => {
         </div>
 
         {/* BODY */}
-        <div className="p-6 md:p-10">
+        <div className="p-5 md:p-6">
 
           {/* IMAGE */}
           <div className="flex flex-col items-center">
@@ -167,10 +166,10 @@ const handleUpdate = async (e) => {
                 "https://cdn-icons-png.flaticon.com/512/149/149071.png"
               }
               alt=""
-              className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+             className="w-24 h-24 md:w-28 md:h-28"
             />
 
-            <label className="mt-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl cursor-pointer">
+            <label className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-medium cursor-pointer transition">
 
               📷 Change Profile Photo
 
@@ -282,17 +281,15 @@ const handleUpdate = async (e) => {
   </div>
 </div>
             {/* BUTTONS */}
-            <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="flex gap-3 pt-4">
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-semibold transition"
-              >
-                {loading
-                  ? "Saving..."
-                  : "Save Changes"}
-              </button>
+             <button
+  type="submit"
+  disabled={loading}
+  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg"
+>
+  {loading ? "Saving..." : "Save Changes"}
+</button>
 
             </div>
           </form>
