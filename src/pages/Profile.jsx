@@ -18,6 +18,7 @@ const Profile = () => {
   );
 
 const [password, setPassword] = useState("");
+const [showPassword, setShowPassword] = useState(false);
   const [image, setImage] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -94,7 +95,7 @@ const handleUpdate = async (e) => {
     }
 
     const res = await API.put(
-      `/profile/${currentUser.id}`,
+      `/profile/${currentUser.id || currentUser._id}`,
       data,
       {
         headers: {
@@ -132,11 +133,19 @@ const handleUpdate = async (e) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-200 flex justify-center items-center p-4">
 
-      <div className="w-full max-w-2xl bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-xl bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden">
 
         {/* TOP */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white text-center">
-
+<button
+                type="button"
+                onClick={() =>
+                  navigate("/chat")
+                }
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-4 rounded-2xl font-semibold transition"
+              >
+                Back To Chat
+              </button>
           <h1 className="text-3xl md:text-4xl font-bold">
             My Profile
           </h1>
@@ -161,9 +170,9 @@ const handleUpdate = async (e) => {
               className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-blue-500 shadow-lg"
             />
 
-            <label className="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl cursor-pointer transition">
+            <label className="mt-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl cursor-pointer">
 
-              Change Photo
+              📷 Change Profile Photo
 
               <input
                 type="file"
@@ -249,8 +258,31 @@ const handleUpdate = async (e) => {
     className="w-full border border-gray-300 rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
   />
 </div>
+<div>
+  <label className="block text-gray-700 font-semibold mb-2">
+    New Password
+  </label>
+
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="Enter new password"
+      className="w-full border border-gray-300 rounded-2xl px-4 py-4 pr-12"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-4 top-1/2 -translate-y-1/2"
+    >
+      {showPassword ? "🙈" : "👁"}
+    </button>
+  </div>
+</div>
             {/* BUTTONS */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="grid grid-cols-2 gap-4 pt-4">
 
               <button
                 type="submit"
@@ -258,18 +290,8 @@ const handleUpdate = async (e) => {
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-semibold transition"
               >
                 {loading
-                  ? "Updating..."
+                  ? "Saving..."
                   : "Save Changes"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  navigate("/chat")
-                }
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-4 rounded-2xl font-semibold transition"
-              >
-                Back To Chat
               </button>
 
             </div>
