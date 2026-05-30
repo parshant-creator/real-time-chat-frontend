@@ -3,14 +3,21 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket/socket";
 import { toast } from "react-hot-toast";
-import { Settings, X } from "lucide-react";
+import {
+  Settings,
+  X,
+  UserPlus,
+  Users,
+  // ChevronLeft,
+} from "lucide-react";
 const Chat = () => {
   const navigate = useNavigate();
 
   const openProfile = () => {
     navigate("/profile");
   };
-  const [showMenu, setShowMenu] = useState(false);
+const [showUsers, setShowUsers] = useState(false);
+const [showGroup, setShowGroup] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [message, setMessage] = useState("");
@@ -24,10 +31,9 @@ const Chat = () => {
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [media, setMedia] = useState(null);
-
+const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const lastTypingTimeRef = useRef(null);
-
   // SOCKET
   useEffect(() => {
     socket.emit("setup", user.id || user._id);
@@ -273,72 +279,202 @@ const Chat = () => {
       console.log(error);
     }
   };
+const usersDrawer = (
+  showUsers && (
+    <div className="fixed inset-0 bg-black/40 z-[100]">
+      <div className="absolute right-0 top-0 h-full w-[320px] bg-white p-4 overflow-y-auto">
 
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-bold text-xl">
+            New Chat
+          </h2>
+
+          <button onClick={() => setShowUsers(false)}>
+            <X />
+          </button>
+        </div>
+
+        {users
+          .filter((u) => u._id !== (user.id || user._id))
+          .map((u) => (
+            <div
+              key={u._id}
+              onClick={() => {
+                createChat(u._id);
+                setShowUsers(false);
+              }}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer"
+            >
+              <img
+                src={
+                  u.avtar ||
+                  "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                }
+                className="w-10 h-10 rounded-full object-cover"
+              />
+
+              <p>{u.username}</p>
+            </div>
+          ))}
+      </div>
+    </div>
+  )
+);
+const groupModal = (
+  showGroup && (
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center">
+
+      <div className="bg-white rounded-2xl p-5 w-full max-w-md">
+
+        <div className="flex justify-between items-center mb-4">
+
+          <h2 className="font-bold text-xl">
+            Create Group
+          </h2>
+
+          <button onClick={() => setShowGroup(false)}>
+            <X />
+          </button>
+{showMenu && (
+  <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
+
+    <div className="flex flex-col items-center border-b pb-4">
+      <img
+        src={
+          user?.avtar ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+        }
+        alt=""
+        className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
+      />
+
+      <h2 className="mt-3 font-bold text-gray-800 text-lg">
+        {user?.username}
+      </h2>
+
+      <p className="text-sm text-gray-500">
+        {user?.email}
+      </p>
+    </div>
+
+    <div className="mt-4 flex flex-col gap-3">
+      <button
+        onClick={openProfile}
+        className="w-full bg-blue-600 text-white py-3 rounded-xl"
+      >
+        Update Profile
+      </button>
+
+      <button
+        onClick={handleLogout}
+        className="w-full bg-red-500 text-white py-3 rounded-xl"
+      >
+        Logout
+      </button>
+    </div>
+
+  </div>
+)}
+        </div>
+
+        <input
+          type="text"
+          placeholder="Group Name"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          className="w-full border p-2 rounded-lg mb-2"
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setGroupIcon(e.target.files[0])}
+          className="w-full border p-2 rounded-lg mb-2"
+        />
+
+        <div className="max-h-40 overflow-y-auto border rounded-lg p-2">
+
+          {users
+            .filter((u) => u._id !== (user.id || user._id))
+            .map((u) => (
+              <div key={u._id} className="flex items-center gap-2 mb-2">
+
+                <input
+                  type="checkbox"
+                  value={u._id}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedUsers((prev) => [...prev, u._id]);
+                    } else {
+                      setSelectedUsers((prev) =>
+                        prev.filter((id) => id !== u._id)
+                      );
+                    }
+                  }}
+                />
+
+                <p>{u.username}</p>
+
+              </div>
+            ))}
+        </div>
+
+        <button
+          onClick={() => {
+            createGroupChat();
+            setShowGroup(false);
+          }}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl mt-4"
+        >
+          Create Group
+        </button>
+
+      </div>
+    </div>
+  )
+);
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 overflow-hidden">
       {/* SIDEBAR */}
       <div
-        className={`${selectedChat ? "hidden md:flex" : "flex"}  w-full 
-  md:w-[32%] 
-  h-full
-  bg-white/80 
-  backdrop-blur-lg 
-  border-r 
-  border-gray-200 
-  flex-col`}
+        className={`${selectedChat ? "hidden md:flex" : "flex"}
+          w-full
+md:w-[380px]
+h-full
+bg-white
+border-r
+flex-col
+shrink-0
+`
+          }
       >
         {/* TOP */}
         <div className="sticky top-0 z-50 flex justify-between items-center p-4 border-b shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <h1 className="text-2xl font-bold">Chats</h1>
-          <div className="flex items-center gap-3 relative">
-            {/* SETTINGS BUTTON */}
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="bg-white text-blue-600 p-2 rounded-xl"
-            >
-              {showMenu ? <X size={20} /> : <Settings size={20} />}
-            </button>
+        <div className="flex items-center gap-2 relative">
 
-            {/* MENU */}
-            {showMenu && (
-              <div className="absolute top-14 right-0 w-64 bg-white rounded-2xl shadow-2xl p-4 z-50">
-                {/* USER */}
-                <div className="flex flex-col items-center border-b pb-4">
-                  <img
-                    src={
-                      user?.avtar ||
-                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                    }
-                    alt=""
-                    className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
-                  />
+  <button
+    onClick={() => setShowUsers(true)}
+    className="bg-white text-blue-600 p-2 rounded-xl"
+  >
+    <UserPlus size={20} />
+  </button>
 
-                  <h2 className="mt-3 font-bold text-gray-800 text-lg">
-                    {user?.username}
-                  </h2>
+  <button
+    onClick={() => setShowGroup(true)}
+    className="bg-white text-blue-600 p-2 rounded-xl"
+  >
+    <Users size={20} />
+  </button>
 
-                  <p className="text-sm text-gray-500">{user?.email}</p>
-                </div>
+  <button
+    onClick={() => setShowMenu(!showMenu)}
+    className="bg-white text-blue-600 p-2 rounded-xl"
+  >
+    {showMenu ? <X size={20} /> : <Settings size={20} />}
+  </button>
 
-                {/* BUTTONS */}
-                <div className="mt-4 flex flex-col gap-3">
-                  <button
-                    onClick={openProfile}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
-                  >
-                    Update Profile
-                  </button>
-
-                  <button
-                    onClick={handleLogout}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+</div>
         </div>
         {/* CHAT LIST */}
         {!showMenu && (
@@ -408,85 +544,14 @@ const Chat = () => {
               );
             })}
 
-            {/* USERS */}
-            <h2 className="font-bold text-gray-600 mt-5 mb-2">
-              Start New Chat
-            </h2>
+           
 
-            {users
-              .filter((u) => u._id !== (user.id || user._id))
-              .map((u) => (
-                <div
-                  key={u._id}
-                  onClick={() => createChat(u._id)}
-                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-100"
-                >
-                  <img
-                    src={
-                      u.avtar ||
-                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                    }
-                    alt=""
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-
-                  <p className="font-medium text-sm md:text-base">
-                    {u.username}
-                  </p>
-                </div>
-              ))}
+         
+                 
           </div>
         )}
         {/* CREATE GROUP */}
-        <div className="border-t p-4 bg-white/70 backdrop-blur-md shrink-0">
-          <h2 className="font-bold mb-3">Create Group</h2>
-
-          <input
-            type="text"
-            placeholder="Group Name"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            className="w-full border p-2 rounded-lg mb-2 text-sm"
-          />
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setGroupIcon(e.target.files[0])}
-            className="w-full border p-2 rounded-lg mb-2 text-sm"
-          />
-
-<div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white">
-              {users
-              .filter((u) => u._id !== (user.id || user._id))
-              .map((u) => (
-                <div key={u._id} className="flex items-center gap-2 mb-1">
-                  <input
-                    type="checkbox"
-                    value={u._id}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedUsers((prev) => [...prev, u._id]);
-                      } else {
-                        setSelectedUsers((prev) =>
-                          prev.filter((id) => id !== u._id),
-                        );
-                      }
-                    }}
-                  />
-
-                  <p className="text-sm">{u.username}</p>
-                </div>
-              ))}
-          </div>
-
-          <button
-            onClick={createGroupChat}
-            className="w-full bg-blue-500 text-white py-2 rounded-lg mt-3"
-          >
-            Create Group
-          </button>
-        </div>
+        
       </div>
 
       {/* CHAT AREA */}
@@ -645,8 +710,12 @@ const Chat = () => {
           </div>
         )}
       </div>
+      {usersDrawer}
+{groupModal}
     </div>
+    
   );
+  
 };
 
 export default Chat;
